@@ -20,17 +20,19 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
   config_name "bitflags"
 
   # Input value field to test against flag list
-  config :field, validate => :string, :required => true
-  
-  # Input list of flags keyed on their numeric value.  
-  # Keys are assumed to be uniquely convertable to integer
-  config :flags, validate => :hash, :required => true
-  
+  config :field, :validate => :string, :required => true
+    
   # Target field for output
-  config :result, validate => :string, :required => true
+  config :destination, :validate => :string, :required => true
+  
+  # Input dictionary of flags keyed on their numeric value.
+  # Keys are assumed to be uniquely convertable to integer
+  config :dictionary, :validate => :hash, :required => true  
   
   # Append values to the `tags` field if parse failure occurs 
   config :tag_on_failure, :validate => :array, :default => ["_flagparsefailure"]
+    
+  config :test_data, :validate => :string, :default => "_test_data"
 
   public
   def register
@@ -40,15 +42,20 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
   public
   def filter(event)
     # no validation on the input field
-    value = event.get("@field").to_i
+    value = event.get(@field).to_i
   
-    if flags_are_valid(@flags) 	  
-      event.set("result", list_flags(@flags, value))
+    if flags_are_valid?(@dictionary) 	  
+      event.set(@destination, list_flags(@dictionary, value))
 
 	  # correct debugging log statement for reference
       # using the event.get API
-      @logger.debug? && @logger.debug("Output flags: #{event.get("@result")}")
-	else	  
+      @logger.debug? && @logger.debug("Output flags: #{event.get("@destination")}")
+	else
+      puts("Failed flags")
+      event.set(@destination, [])
+	  puts(@tag_on_failure)
+	  puts(@test_data)
+	  puts('***********')
       @tag_on_failure.each {|tag| event.tag(tag)}
 	end
 
