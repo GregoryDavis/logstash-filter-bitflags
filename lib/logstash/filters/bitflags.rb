@@ -31,8 +31,6 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
   
   # Append values to the `tags` field if parse failure occurs 
   config :tag_on_failure, :validate => :array, :default => ["_flagparsefailure"]
-    
-  config :test_data, :validate => :string, :default => "_test_data"
 
   public
   def register
@@ -51,11 +49,7 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
       # using the event.get API
       @logger.debug? && @logger.debug("Output flags: #{event.get("@destination")}")
 	else
-      puts("Failed flags")
       event.set(@destination, [])
-	  puts(@tag_on_failure)
-	  puts(@test_data)
-	  puts('***********')
       @tag_on_failure.each {|tag| event.tag(tag)}
 	end
 

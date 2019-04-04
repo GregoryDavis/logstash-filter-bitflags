@@ -227,5 +227,31 @@ describe LogStash::Filters::Bitflags do
             end
 	    end		
     end
+	
+	describe "tag on failure" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary"  => [ 1, "Flag_1",
+                               2, "Flag_2",
+                               4, 4,
+                               8, "Flag_8",
+                               64, "Flag_64" ],
+            "tag_on_failure" => ["_custom", "_extra_tag"]
+          }
+	    end
+	    
+	    context "custom parse failure with multiple tags" do 		
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "detects invalid flag data error and applies a custom tag" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq([])	
+              expect(event.get("tags")).to eq(["_custom", "_extra_tag"])	
+            end
+	    end		
+    end
   
 end
