@@ -100,9 +100,56 @@ describe LogStash::Filters::Bitflags do
             end
         end	
     end
+
+    describe "decode to string" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary"  => [ 1, "Flag_1",
+                               2, "Flag_2",
+                               4, "Flag_4",
+                               8, "Flag_8",
+                               64, "Flag_64" ],
+            "separator"   => '|'
+          }
+	    end
+	    
+	    context "single match" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "decodes a decimal input value to a single flag strings" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq("Flag_1")
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "multiple match" do 
+            let(:event) { LogStash::Event.new("input" => 71) }
+            
+            it "decodes a decimal input value to a list of flag strings" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq("Flag_1|Flag_2|Flag_4|Flag_64")
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32) }
+        
+            it "decodes a decimal input value with no match" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq("")
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
 	
-	
-	describe "mixed decoding" do
+	describe "hex input with decimal dictionary decoding" do
         let(:config) do
           {
             "field"       => "input",
