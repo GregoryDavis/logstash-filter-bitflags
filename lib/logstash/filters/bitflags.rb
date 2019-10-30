@@ -39,8 +39,16 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
 
   public
   def filter(event)
-    # no validation on the input field
-    value = event.get(@field).to_i
+    # Force unknown input to string type to allow determination of 
+	# the appropriate base for to_i conversion.
+	input = event.get(@field).to_s
+	
+    base  = 10
+	if input.start_with?('0x')
+	  base = 16
+	end
+  
+    value = input.to_i(base)
   
     if flags_are_valid?(@dictionary) 	  
       event.set(@destination, list_flags(@dictionary, value))
