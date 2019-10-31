@@ -106,7 +106,7 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
 
 	# correct debugging log statement for reference
 	# using the event.get API
-	@logger.debug? && @logger.debug("Output flags: #{event.get("@destination")}")
+	@logger.debug? && @logger.debug("Output flags: #{event.get("@destination")}")   
 
 	# filter_matched should go in the last line of our successful code
 	filter_matched(event)
