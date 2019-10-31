@@ -195,6 +195,149 @@ describe LogStash::Filters::Bitflags do
             end
         end	
     end
+    
+    describe "override default" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary"  => [ 1, "Flag_1",
+                               2, "Flag_2",
+                               4, "Flag_4",
+                               8, "Flag_8",
+                               64, "Flag_64" ]
+          }
+	    end
+	    
+	    context "destination is free" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "sucessfully reports the result to destination" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "destination is occupied" do 
+            let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
+            
+            it "overrides the destination value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq("100")
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
+        
+            it "overrides the destination value" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq("100")
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
+    
+    describe "override set false" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary"  => [ 1, "Flag_1",
+                               2, "Flag_2",
+                               4, "Flag_4",
+                               8, "Flag_8",
+                               64, "Flag_64" ],
+            "override"    => false
+          }
+	    end
+	    
+	    context "destination is free" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "sucessfully reports the result to destination" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "destination is occupied" do 
+            let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
+            
+            it "overrides the destination value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq("100")
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
+        
+            it "overrides the destination value" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq("100")
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
+    
+    describe "override set true" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary"  => [ 1, "Flag_1",
+                               2, "Flag_2",
+                               4, "Flag_4",
+                               8, "Flag_8",
+                               64, "Flag_64" ],
+            "override"    => true
+          }
+	    end
+	    
+	    context "destination is free" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "sucessfully reports the result to destination" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "destination is occupied" do 
+            let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
+            
+            it "overrides the destination value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
+        
+            it "overrides the destination value" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq([])
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
 	
 	
 	describe "tag on failure" do

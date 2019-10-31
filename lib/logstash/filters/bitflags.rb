@@ -29,10 +29,17 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
   # Keys are assumed to be uniquely convertable to integer
   config :dictionary, :validate => :hash, :required => true
 
-  # The separator field is an optional string argument which 
+  # The separator property is an optional string argument which 
   # will cause the filter to return results as a string of 
   # all matching flags name delimited by the specified separator.
   config :separator, :validate => :string
+  
+  # The override property is an optional boolean argument which 
+  # controls the behavior of the filter when the destination 
+  # field already exists on the events to be filtered.  When 
+  # false, processing terminates, when true the results of the 
+  # decoding will overwrite the existing contents of destination.
+  config :override, :validate => :boolean, :default => false
 
   # Append values to the `tags` field if parse failure occurs
   config :tag_on_failure, :validate => :array, :default => ["_flagparsefailure"]
@@ -44,15 +51,14 @@ class LogStash::Filters::Bitflags < LogStash::Filters::Base
 
   public
   def filter(event)
+    # If the destination field is alredy populated and @override is not set 
+    # true, no further work should be done.    
+    return unless @override or !event.include?(@destination)
+  
 	# Force unknown input to string type to allow determination of
 	# the appropriate base for to_i conversion.
 	input = event.get(@field).to_s
-
-	base  = 10
-	if input.start_with?('0x')
-	  base = 16
-	end
-
+	base = input.start_with?('0x') ? 16 : 10
 	value = input.to_i(base)
 
 	if flags_are_valid?(@dictionary)
