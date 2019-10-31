@@ -7,7 +7,93 @@ describe LogStash::Filters::Bitflags do
     let(:config) { Hash.new }
     subject { described_class.new(config) }
     
-    describe "decimal decoding" do
+    describe "using a dictionary file" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary_path"  => "./spec/fixtures/dictionary.yaml"
+          }
+	    end
+	    
+	    context "single match" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "return 1 matching value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "multiple match" do 
+            let(:event) { LogStash::Event.new("input" => 71) }
+            
+            it "return all matching values" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1", "Flag_2", "Flag_4", "Flag_64"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32) }
+        
+            it "return 0 matching values" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq([])
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
+    
+    describe "using a hexidecimal dictionary file" do
+        let(:config) do
+          {
+            "field"       => "input",
+            "destination" => "output",
+            "dictionary_path"  => "./spec/fixtures/hex_dictionary.yaml"
+          }
+	    end
+	    
+	    context "single match" do 
+            let(:event) { LogStash::Event.new("input" => 1) }
+            
+            it "return 1 matching value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "multiple match" do 
+            let(:event) { LogStash::Event.new("input" => 71) }
+            
+            it "return all matching value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1", "Flag_2", "Flag_4", "Flag_64"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 32) }
+        
+            it "return 0 matching values" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq([])
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    end
+    
+    describe "using an input dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -23,7 +109,7 @@ describe LogStash::Filters::Bitflags do
 	    context "single match" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "decodes a decimal input value to a single flag strings" do
+            it "return 1 matching value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq(["Flag_1"])
@@ -34,7 +120,7 @@ describe LogStash::Filters::Bitflags do
 	    context "multiple match" do 
             let(:event) { LogStash::Event.new("input" => 71) }
             
-            it "decodes a decimal input value to a list of flag strings" do
+            it "return all matching value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq(["Flag_1", "Flag_2", "Flag_4", "Flag_64"])
@@ -45,7 +131,40 @@ describe LogStash::Filters::Bitflags do
 	    context "no match" do 	
 	        let(:event) { LogStash::Event.new("input" => 32) }
         
-            it "decodes a decimal input value with no match" do
+            it "return 0 matching values" do
+                subject.register
+                subject.filter(event)
+                expect(event.get("output")).to eq([])
+                expect(event.get("tags")).to eq(nil)
+            end
+        end	
+    
+        context "hexidecimal input single match" do 
+            let(:event) { LogStash::Event.new("input" => '0x1') }
+            
+            it "return 1 matching value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+	    
+	    context "hexidecimal input multiple match" do 
+            let(:event) { LogStash::Event.new("input" => 0x47) }
+            
+            it "return all matching value" do
+              subject.register
+              subject.filter(event)
+              expect(event.get("output")).to eq(["Flag_1", "Flag_2", "Flag_4", "Flag_64"])
+              expect(event.get("tags")).to eq(nil)
+            end
+	    end
+        
+	    context "hexidecimal input no match" do 	
+	        let(:event) { LogStash::Event.new("input" => 0x20) }
+        
+            it "return 0 matching values" do
                 subject.register
                 subject.filter(event)
                 expect(event.get("output")).to eq([])
@@ -54,7 +173,7 @@ describe LogStash::Filters::Bitflags do
         end	
     end
 
-    describe "hex decoding" do
+    describe "using a hexidecimal dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -101,7 +220,7 @@ describe LogStash::Filters::Bitflags do
         end	
     end
 
-    describe "decode to string" do
+    describe "using the separator configuration" do
         let(:config) do
           {
             "field"       => "input",
@@ -118,7 +237,7 @@ describe LogStash::Filters::Bitflags do
 	    context "single match" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "decodes a decimal input value to a single flag strings" do
+            it "return 1 matching value as a string" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq("Flag_1")
@@ -129,7 +248,7 @@ describe LogStash::Filters::Bitflags do
 	    context "multiple match" do 
             let(:event) { LogStash::Event.new("input" => 71) }
             
-            it "decodes a decimal input value to a list of flag strings" do
+            it "return all matching values as a string" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq("Flag_1|Flag_2|Flag_4|Flag_64")
@@ -140,7 +259,7 @@ describe LogStash::Filters::Bitflags do
 	    context "no match" do 	
 	        let(:event) { LogStash::Event.new("input" => 32) }
         
-            it "decodes a decimal input value with no match" do
+            it "return an empty string" do
                 subject.register
                 subject.filter(event)
                 expect(event.get("output")).to eq("")
@@ -148,55 +267,8 @@ describe LogStash::Filters::Bitflags do
             end
         end	
     end
-	
-	describe "hex input with decimal dictionary decoding" do
-        let(:config) do
-          {
-            "field"       => "input",
-            "destination" => "output",
-            "dictionary"  => [ 1, "Flag_1",
-                               2, "Flag_2",
-                               4, "Flag_4",
-                               8, "Flag_8",
-                               64, "Flag_64" ]
-          }
-	    end
 	    
-	    context "single match" do 
-            let(:event) { LogStash::Event.new("input" => '0x1') }
-            
-            it "decodes a decimal input value to a single flag strings" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq(["Flag_1"])
-              expect(event.get("tags")).to eq(nil)
-            end
-	    end
-	    
-	    context "multiple match" do 
-            let(:event) { LogStash::Event.new("input" => 0x47) }
-            
-            it "decodes a decimal input value to a list of flag strings" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq(["Flag_1", "Flag_2", "Flag_4", "Flag_64"])
-              expect(event.get("tags")).to eq(nil)
-            end
-	    end
-        
-	    context "no match" do 	
-	        let(:event) { LogStash::Event.new("input" => 0x20) }
-        
-            it "decodes a decimal input value with no match" do
-                subject.register
-                subject.filter(event)
-                expect(event.get("output")).to eq([])
-                expect(event.get("tags")).to eq(nil)
-            end
-        end	
-    end
-    
-    describe "override default" do
+    describe "using the override default configuration" do
         let(:config) do
           {
             "field"       => "input",
@@ -212,7 +284,7 @@ describe LogStash::Filters::Bitflags do
 	    context "destination is free" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "sucessfully reports the result to destination" do
+            it "reurn the matched value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq(["Flag_1"])
@@ -223,7 +295,7 @@ describe LogStash::Filters::Bitflags do
 	    context "destination is occupied" do 
             let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
             
-            it "overrides the destination value" do
+            it "return the original value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq("100")
@@ -234,7 +306,7 @@ describe LogStash::Filters::Bitflags do
 	    context "no match" do 	
 	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
         
-            it "overrides the destination value" do
+            it "return the original value" do
                 subject.register
                 subject.filter(event)
                 expect(event.get("output")).to eq("100")
@@ -243,7 +315,7 @@ describe LogStash::Filters::Bitflags do
         end	
     end
     
-    describe "override set false" do
+    describe "using the override configuration set false" do
         let(:config) do
           {
             "field"       => "input",
@@ -260,7 +332,7 @@ describe LogStash::Filters::Bitflags do
 	    context "destination is free" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "sucessfully reports the result to destination" do
+            it "return the matched value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq(["Flag_1"])
@@ -271,7 +343,7 @@ describe LogStash::Filters::Bitflags do
 	    context "destination is occupied" do 
             let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
             
-            it "overrides the destination value" do
+            it "return the original value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq("100")
@@ -282,7 +354,7 @@ describe LogStash::Filters::Bitflags do
 	    context "no match" do 	
 	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
         
-            it "overrides the destination value" do
+            it "return the original value" do
                 subject.register
                 subject.filter(event)
                 expect(event.get("output")).to eq("100")
@@ -291,7 +363,7 @@ describe LogStash::Filters::Bitflags do
         end	
     end
     
-    describe "override set true" do
+    describe "using the override configuration set true" do
         let(:config) do
           {
             "field"       => "input",
@@ -308,7 +380,7 @@ describe LogStash::Filters::Bitflags do
 	    context "destination is free" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "sucessfully reports the result to destination" do
+            it "return the matched value" do
               subject.register
               subject.filter(event)
               expect(event.get("output")).to eq(["Flag_1"])
@@ -316,7 +388,7 @@ describe LogStash::Filters::Bitflags do
             end
 	    end
 	    
-	    context "destination is occupied" do 
+	    context "return the matched value" do 
             let(:event) { LogStash::Event.new("input" => 1, "output" => "100") }
             
             it "overrides the destination value" do
@@ -330,7 +402,7 @@ describe LogStash::Filters::Bitflags do
 	    context "no match" do 	
 	        let(:event) { LogStash::Event.new("input" => 32, "output" => "100") }
         
-            it "overrides the destination value" do
+            it "return an empty array" do
                 subject.register
                 subject.filter(event)
                 expect(event.get("output")).to eq([])
@@ -339,8 +411,7 @@ describe LogStash::Filters::Bitflags do
         end	
     end
 	
-	
-	describe "tag on failure" do
+	describe "validate input dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -356,16 +427,13 @@ describe LogStash::Filters::Bitflags do
 	    context "duplicate flags" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "detects and tags duplicate flags error" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_flagparsefailure"])	
+            it "raises an error" do
+              expect{subject.register}.to raise_error
             end
 	    end		
     end
 	
-	describe "tag on failure" do
+	describe "validate input dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -381,16 +449,13 @@ describe LogStash::Filters::Bitflags do
 	    context "duplicate keys" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "detects and tags duplicate keys error" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_flagparsefailure"])	
+            it "raises an error" do
+              expect{subject.register}.to raise_error
             end
-	    end		
+	    end			
     end
 	
-	describe "tag on failure" do
+	describe "validate input dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -406,16 +471,13 @@ describe LogStash::Filters::Bitflags do
 	    context "invalid keys" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "detects and tags invalid key data error" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_flagparsefailure"])	
+            it "raises an error" do
+              expect{subject.register}.to raise_error
             end
-	    end		
+	    end			
     end
 	
-	describe "tag on failure" do
+	describe "validate input dictionary" do
         let(:config) do
           {
             "field"       => "input",
@@ -431,65 +493,10 @@ describe LogStash::Filters::Bitflags do
 	    context "invalid flags" do 
             let(:event) { LogStash::Event.new("input" => 1) }
             
-            it "detects and tags invalid flag data error" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_flagparsefailure"])	
+            it "raises an error" do
+              expect{subject.register}.to raise_error
             end
-	    end		
-    end
-	
-	describe "tag on failure" do
-        let(:config) do
-          {
-            "field"       => "input",
-            "destination" => "output",
-            "dictionary"  => [ 1, "Flag_1",
-                               2, "Flag_2",
-                               4, 4,
-                               8, "Flag_8",
-                               64, "Flag_64" ],
-            "tag_on_failure" => ["_custom"]
-          }
-	    end
-	    
-	    context "custom parse failure tag" do 		
-            let(:event) { LogStash::Event.new("input" => 1) }
-            
-            it "detects invalid flag data error and applies a custom tag" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_custom"])	
-            end
-	    end		
-    end
-	
-	describe "tag on failure" do
-        let(:config) do
-          {
-            "field"       => "input",
-            "destination" => "output",
-            "dictionary"  => [ 1, "Flag_1",
-                               2, "Flag_2",
-                               4, 4,
-                               8, "Flag_8",
-                               64, "Flag_64" ],
-            "tag_on_failure" => ["_custom", "_extra_tag"]
-          }
-	    end
-	    
-	    context "custom parse failure with multiple tags" do 		
-            let(:event) { LogStash::Event.new("input" => 1) }
-            
-            it "detects invalid flag data error and applies a custom tag" do
-              subject.register
-              subject.filter(event)
-              expect(event.get("output")).to eq([])	
-              expect(event.get("tags")).to eq(["_custom", "_extra_tag"])	
-            end
-	    end		
+	    end	
     end
   
 end
